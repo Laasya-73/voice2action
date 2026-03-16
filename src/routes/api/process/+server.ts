@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { DEEPGRAM_API_KEY, GROQ_API_KEY, GROQ_MODEL } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import { safeJsonParse, type ActionItem, type ProcessResult } from '$lib/utils';
 
@@ -214,7 +214,9 @@ function normalizeActions(raw: unknown, transcript: string): ActionItem[] {
 }
 
 async function transcribeWithDeepgram(file: File): Promise<string> {
-  if (!DEEPGRAM_API_KEY) {
+  const deepgramApiKey = env.DEEPGRAM_API_KEY;
+
+  if (!deepgramApiKey) {
     throw new Error('Missing DEEPGRAM_API_KEY.');
   }
 
@@ -225,7 +227,7 @@ async function transcribeWithDeepgram(file: File): Promise<string> {
     {
       method: 'POST',
       headers: {
-        Authorization: `Token ${DEEPGRAM_API_KEY}`,
+        Authorization: `Token ${deepgramApiKey}`,
         'Content-Type': file.type || 'application/octet-stream'
       },
       body: buffer
@@ -250,11 +252,14 @@ async function transcribeWithDeepgram(file: File): Promise<string> {
 }
 
 async function extractActionsWithGroq(transcript: string): Promise<ProcessResult> {
-  if (!GROQ_API_KEY) {
+  const groqApiKey = env.GROQ_API_KEY;
+  const groqModel = env.GROQ_MODEL;
+
+  if (!groqApiKey) {
     throw new Error('Missing GROQ_API_KEY.');
   }
 
-  if (!GROQ_MODEL) {
+  if (!groqModel) {
     throw new Error('Missing GROQ_MODEL.');
   }
 
@@ -298,11 +303,11 @@ ${transcript}
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${GROQ_API_KEY}`,
+      Authorization: `Bearer ${groqApiKey}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model: groqModel,
       temperature: 0.2,
       messages: [
         {

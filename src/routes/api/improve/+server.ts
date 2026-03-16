@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { GROQ_API_KEY, GROQ_MODEL } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import { safeJsonParse, type ActionItem, type ProcessResult } from '$lib/utils';
 
@@ -204,11 +204,14 @@ async function refineActionsWithGroq(
   currentSummary: string,
   currentActions: ActionItem[]
 ): Promise<ProcessResult> {
-  if (!GROQ_API_KEY) {
+  const groqApiKey = env.GROQ_API_KEY;
+  const groqModel = env.GROQ_MODEL;
+
+  if (!groqApiKey) {
     throw new Error('Missing GROQ_API_KEY.');
   }
 
-  if (!GROQ_MODEL) {
+  if (!groqModel) {
     throw new Error('Missing GROQ_MODEL.');
   }
 
@@ -256,11 +259,11 @@ ${JSON.stringify(currentActions, null, 2)}
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${GROQ_API_KEY}`,
+      Authorization: `Bearer ${groqApiKey}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model: groqModel,
       temperature: 0.2,
       messages: [
         {
